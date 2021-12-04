@@ -11,11 +11,11 @@
 
 
 typedef struct {
+	char display_text[64];
 	osMessageQueueId_t event_queue;
 	ViewPort* view_port;
 	Gui* gui;
 	IrdaWorker* worker;
-	osTimerId_t timer;
 } XecutUIDState;
 
 typedef enum {
