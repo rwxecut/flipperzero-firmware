@@ -56,3 +56,54 @@ void xecut_usb_ir_dongle_free(XecutUIDState* state) {
 	osMessageQueueDelete(state->event_queue);
 	free(state);
 }
+
+
+static void xecut_usb_ir_dongle_keystroke(InputType input_type, uint16_t button)
+{
+	if (input_type == InputTypePress) furi_hal_hid_kb_press(button);
+	else if (input_type == InputTypeRelease) furi_hal_hid_kb_release(button);
+}
+
+
+void xecut_usb_ir_dongle_loop(XecutUIDState* state, ValueMutex* state_mutex) {
+	XecutUIDEvent event;
+	for (bool running = true; running;) {
+		osStatus_t event_status = osMessageQueueGet(state->event_queue, &event, NULL, 100);
+		XecutUIDState *_state = (XecutUIDState*)acquire_mutex_block(state_mutex);
+		if (event_status == osOK) {
+			if (event.type == EventTypeInput) {
+				switch (event.input.key) {
+				case InputKeyLeft:
+					FURI_LOG_I(TAG, "Pressed Left");
+					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_LEFT_ARROW);
+					break;
+				case InputKeyRight:
+					FURI_LOG_I(TAG, "Pressed Right");
+					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_RIGHT_ARROW);
+					break;
+				case InputKeyUp:
+					FURI_LOG_I(TAG, "Pressed Up");
+					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_UP_ARROW);
+					break;
+				case InputKeyDown:
+					FURI_LOG_I(TAG, "Pressed Down");
+					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_DOWN_ARROW);
+					break;
+				case InputKeyOk:
+					FURI_LOG_I(TAG, "Pressed OK");
+					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_MOD_LEFT_CTRL);
+					break;
+				case InputKeyBack:
+					if (event.input.type == InputTypePress)
+						running = false;
+				default:
+					break;
+				}
+			} else if (event.type == EventTypeTick) {
+				// do smth
+			}
+		}
+		view_port_update(_state->view_port);
+		release_mutex(state_mutex, _state);
+	}
+}
