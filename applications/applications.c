@@ -206,7 +206,7 @@ const size_t FLIPPER_ON_SYSTEM_START_COUNT =
 // Plugin menu
 const FlipperApplication FLIPPER_PLUGINS[] = {
 #ifdef APP_XECUT_USB_IR_DONGLE
-    {.app = xecut_usb_ir_dongle_app, .name = "USB IR Dongle", .stack_size = 1024, .icon = NULL},
+    {.app = xecut_usb_ir_dongle_app, .name = "USB IR Dongle", .stack_size = 4096, .icon = NULL},
 #endif
 
 #ifdef APP_MUSIC_PLAYER

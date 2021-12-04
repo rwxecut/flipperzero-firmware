@@ -32,8 +32,18 @@ void xecut_usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 }
 
 
+void xecut_usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
+{
+    furi_assert(ctx);
+    furi_assert(sig);
+}
+
+
 XecutUIDState* xecut_usb_ir_dongle_init(ValueMutex* state_mutex) {
 	XecutUIDState* state = furi_alloc(sizeof(XecutUIDState));
+	state->worker = irda_worker_alloc();
+	irda_worker_rx_start(state->worker);
+	irda_worker_rx_set_received_signal_callback(state->worker, xecut_usb_ir_dongle_signal_received_callback, state);
 	state->event_queue = osMessageQueueNew(8, sizeof(XecutUIDEvent), NULL);
 	furi_check(state->event_queue);
 	state->view_port = view_port_alloc();
@@ -54,6 +64,8 @@ void xecut_usb_ir_dongle_free(XecutUIDState* state) {
 	furi_record_close("gui");
 	osTimerDelete(state->timer);
 	osMessageQueueDelete(state->event_queue);
+	irda_worker_rx_stop(state->worker);
+	irda_worker_free(state->worker);
 	free(state);
 }
 
@@ -73,31 +85,31 @@ void xecut_usb_ir_dongle_loop(XecutUIDState* state, ValueMutex* state_mutex) {
 		if (event_status == osOK) {
 			if (event.type == EventTypeInput) {
 				switch (event.input.key) {
-				case InputKeyLeft:
-					FURI_LOG_I(TAG, "Pressed Left");
-					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_LEFT_ARROW);
-					break;
-				case InputKeyRight:
-					FURI_LOG_I(TAG, "Pressed Right");
-					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_RIGHT_ARROW);
-					break;
-				case InputKeyUp:
-					FURI_LOG_I(TAG, "Pressed Up");
-					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_UP_ARROW);
-					break;
-				case InputKeyDown:
-					FURI_LOG_I(TAG, "Pressed Down");
-					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_DOWN_ARROW);
-					break;
-				case InputKeyOk:
-					FURI_LOG_I(TAG, "Pressed OK");
-					xecut_usb_ir_dongle_keystroke(event.input.type, KEY_MOD_LEFT_CTRL);
-					break;
-				case InputKeyBack:
-					if (event.input.type == InputTypePress)
-						running = false;
-				default:
-					break;
+					case InputKeyLeft:
+						FURI_LOG_I(TAG, "Pressed Left");
+						xecut_usb_ir_dongle_keystroke(event.input.type, KEY_LEFT_ARROW);
+						break;
+					case InputKeyRight:
+						FURI_LOG_I(TAG, "Pressed Right");
+						xecut_usb_ir_dongle_keystroke(event.input.type, KEY_RIGHT_ARROW);
+						break;
+					case InputKeyUp:
+						FURI_LOG_I(TAG, "Pressed Up");
+						xecut_usb_ir_dongle_keystroke(event.input.type, KEY_UP_ARROW);
+						break;
+					case InputKeyDown:
+						FURI_LOG_I(TAG, "Pressed Down");
+						xecut_usb_ir_dongle_keystroke(event.input.type, KEY_DOWN_ARROW);
+						break;
+					case InputKeyOk:
+						FURI_LOG_I(TAG, "Pressed OK");
+						xecut_usb_ir_dongle_keystroke(event.input.type, KEY_MOD_LEFT_CTRL);
+						break;
+					case InputKeyBack:
+						if (event.input.type == InputTypePress)
+							running = false;
+					default:
+						break;
 				}
 			} else if (event.type == EventTypeTick) {
 				// do smth
