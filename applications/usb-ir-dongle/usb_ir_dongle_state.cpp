@@ -1,8 +1,8 @@
-#include "xecut_usb_ir_dongle.h"
-#include "xecut_usb_ir_dongle_state.h"
+#include "usb_ir_dongle.h"
+#include "usb_ir_dongle_state.h"
 
 
-static void xecut_usb_ir_dongle_keystroke(uint16_t button) {
+static void usb_ir_dongle_keystroke(uint16_t button) {
 	furi_hal_hid_kb_press(button);
 	furi_hal_hid_kb_release(button);
 }
@@ -12,19 +12,19 @@ static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
 	if (prot == IrdaProtocolNEC && addr == 0x00) {
 		switch (cmd) {
 			case 0x15:
-				xecut_usb_ir_dongle_keystroke(KEY_UP_ARROW);
+				usb_ir_dongle_keystroke(KEY_UP_ARROW);
 				break;
 			case 0x07:
-				xecut_usb_ir_dongle_keystroke(KEY_DOWN_ARROW);
+				usb_ir_dongle_keystroke(KEY_DOWN_ARROW);
 				break;
 			case 0x44:
-				xecut_usb_ir_dongle_keystroke(KEY_LEFT_ARROW);
+				usb_ir_dongle_keystroke(KEY_LEFT_ARROW);
 				break;
 			case 0x40:
-				xecut_usb_ir_dongle_keystroke(KEY_RIGHT_ARROW);
+				usb_ir_dongle_keystroke(KEY_RIGHT_ARROW);
 				break;
 			case 0x43:
-				xecut_usb_ir_dongle_keystroke(KEY_SPACE);
+				usb_ir_dongle_keystroke(KEY_SPACE);
 				break;
 			default: break;
 		}
@@ -32,17 +32,17 @@ static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
 }
 
 
-void xecut_usb_ir_dongle_input_callback(InputEvent* input_event, void* ctx) {
+void usb_ir_dongle_input_callback(InputEvent* input_event, void* ctx) {
 	furi_assert(ctx);
-	XecutUIDState *state = (XecutUIDState*)ctx;
-	XecutUIDEvent event = {.input = *input_event, .type = EventTypeInput};
+	UIDState *state = (UIDState*)ctx;
+	UIDEvent event = {.input = *input_event, .type = EventTypeInput};
 	osMessageQueuePut(state->event_queue, &event, 0, osWaitForever);
 }
 
 
-void xecut_usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
+void usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 	furi_assert(ctx);
-	XecutUIDState *state = (XecutUIDState*)acquire_mutex((ValueMutex*)ctx, 25);
+	UIDState *state = (UIDState*)acquire_mutex((ValueMutex*)ctx, 25);
 	if (!state) return;
 
 	canvas_set_font(canvas, FontSecondary);
@@ -52,11 +52,11 @@ void xecut_usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 }
 
 
-void xecut_usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
+void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 {
 	furi_assert(ctx);
 	furi_assert(sig);
-	XecutUIDState *state = (XecutUIDState*)ctx;
+	UIDState *state = (UIDState*)ctx;
 	if (irda_worker_signal_is_decoded(sig)) {
 		const IrdaMessage* message = irda_worker_get_decoded_signal(sig);
 		snprintf(
@@ -85,24 +85,24 @@ void xecut_usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* s
 }
 
 
-XecutUIDState* xecut_usb_ir_dongle_init(ValueMutex* state_mutex) {
-	XecutUIDState* state = (XecutUIDState*)furi_alloc(sizeof(XecutUIDState));
+UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
+	UIDState* state = (UIDState*)furi_alloc(sizeof(UIDState));
 	state->worker = irda_worker_alloc();
 	irda_worker_rx_start(state->worker);
-	irda_worker_rx_set_received_signal_callback(state->worker, xecut_usb_ir_dongle_signal_received_callback, state);
+	irda_worker_rx_set_received_signal_callback(state->worker, usb_ir_dongle_signal_received_callback, state);
 	irda_worker_rx_enable_blink_on_receiving(state->worker, true);
-	state->event_queue = osMessageQueueNew(8, sizeof(XecutUIDEvent), NULL);
+	state->event_queue = osMessageQueueNew(8, sizeof(UIDEvent), NULL);
 	furi_check(state->event_queue);
 	state->view_port = view_port_alloc();
-	view_port_draw_callback_set(state->view_port, xecut_usb_ir_dongle_render_callback, state_mutex);
-	view_port_input_callback_set(state->view_port, xecut_usb_ir_dongle_input_callback, state);
+	view_port_draw_callback_set(state->view_port, usb_ir_dongle_render_callback, state_mutex);
+	view_port_input_callback_set(state->view_port, usb_ir_dongle_input_callback, state);
 	state->gui = (Gui*)furi_record_open("gui");
 	gui_add_view_port(state->gui, state->view_port, GuiLayerFullscreen);
 	return state;
 }
 
 
-void xecut_usb_ir_dongle_free(XecutUIDState* state) {
+void usb_ir_dongle_free(UIDState* state) {
 	view_port_enabled_set(state->view_port, false);
 	gui_remove_view_port(state->gui, state->view_port);
 	view_port_free(state->view_port);
@@ -114,11 +114,11 @@ void xecut_usb_ir_dongle_free(XecutUIDState* state) {
 }
 
 
-void xecut_usb_ir_dongle_loop(XecutUIDState* state, ValueMutex* state_mutex) {
-	XecutUIDEvent event;
+void usb_ir_dongle_loop(UIDState* state, ValueMutex* state_mutex) {
+	UIDEvent event;
 	for (bool running = true; running;) {
 		osStatus_t event_status = osMessageQueueGet(state->event_queue, &event, NULL, 100);
-		XecutUIDState *_state = (XecutUIDState*)acquire_mutex_block(state_mutex);
+		UIDState *_state = (UIDState*)acquire_mutex_block(state_mutex);
 		if (event_status == osOK && event.type == EventTypeInput && event.input.type == InputTypePress) {
 			switch (event.input.key) {
 				case InputKeyLeft:

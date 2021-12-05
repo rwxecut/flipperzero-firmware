@@ -8,7 +8,7 @@
 #include <irda_worker.h>
 
 
-#define TAG "XECUT_USB_IR_DONGLE"
+#define TAG "USB_IR_DONGLE"
 
 
 typedef struct {
@@ -17,7 +17,7 @@ typedef struct {
 	ViewPort* view_port;
 	Gui* gui;
 	IrdaWorker* worker;
-} XecutUIDState;
+} UIDState;
 
 typedef enum {
 	EventTypeTick,
@@ -29,4 +29,4 @@ typedef struct {
 		InputEvent input;
 	};
 	EventType type;
-} XecutUIDEvent;
+} UIDEvent;
