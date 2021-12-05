@@ -90,10 +90,14 @@ void usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 
 	const char *app_text = state->app_list.size() > 0 ? state->app_list[state->app_list_pos].c_str() : "Empty";
 	const char *remote_text = state->remote_list.size() > 0 ? state->remote_list[state->remote_list_pos].c_str() : "Empty";
+	canvas_set_font(canvas, FontPrimary);
+	canvas_draw_str(canvas, 0, 10, "IR USB Dongle Bongle");
 	canvas_set_font(canvas, FontSecondary);
-	canvas_draw_str(canvas, 0, 10, app_text);
-	canvas_draw_str(canvas, 0, 19, remote_text);
-	canvas_draw_str(canvas, 0, 28, state->irda_text[0] ? state->irda_text : "USB IR Dongle Bongle");
+	canvas_draw_str(canvas, 0, 19, "U/D App, L/R Remote");
+	canvas_draw_str(canvas, 0, 28, app_text);
+	canvas_draw_str(canvas, 0, 37, remote_text);
+	canvas_draw_str(canvas, 0, 46, "Last IRDA Signal received:");
+	canvas_draw_str(canvas, 0, 55, state->irda_text[0] ? state->irda_text : "None");
 
 	release_mutex((ValueMutex*)ctx, state);
 }

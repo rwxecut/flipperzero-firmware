@@ -14,16 +14,14 @@
 
 
 namespace std {
-template<>
-struct less<IrdaMessage>
-{
-   bool operator()(const IrdaMessage& m1, const IrdaMessage& m2) const
-   {
-   		return (m1.protocol < m2.protocol)
-   			|| (m1.protocol == m2.protocol && m1.address < m2.address)
-   			|| (m1.address == m2.address && m1.command < m2.command);
-   }
-};
+	template<>
+	struct less<IrdaMessage> {
+		bool operator()(const IrdaMessage& m1, const IrdaMessage& m2) const {
+			return (m1.protocol < m2.protocol)
+				|| (m1.protocol == m2.protocol && m1.address < m2.address)
+				|| (m1.address == m2.address && m1.command < m2.command);
+		}
+	};
 }
 
 
@@ -41,7 +39,6 @@ typedef struct {
 
 
 typedef enum {
-	EventTypeTick,
 	EventTypeInput
 } EventType;
 
