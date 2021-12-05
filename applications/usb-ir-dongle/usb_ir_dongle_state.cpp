@@ -32,19 +32,19 @@ static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
 	if (prot == IrdaProtocolSamsung32 && addr == 0x07) {
 		switch (cmd) {
 			case 0x07:
-				xecut_usb_ir_dongle_keystroke(KEY_UP_ARROW);
+				usb_ir_dongle_keystroke(KEY_UP_ARROW);
 				break;
 			case 0x0B:
-				xecut_usb_ir_dongle_keystroke(KEY_DOWN_ARROW);
+				usb_ir_dongle_keystroke(KEY_DOWN_ARROW);
 				break;
 			case 0x45:
-				xecut_usb_ir_dongle_keystroke(KEY_LEFT_ARROW);
+				usb_ir_dongle_keystroke(KEY_LEFT_ARROW);
 				break;
 			case 0x48:
-				xecut_usb_ir_dongle_keystroke(KEY_RIGHT_ARROW);
+				usb_ir_dongle_keystroke(KEY_RIGHT_ARROW);
 				break;
 			case 0x4A: case 0x47:
-				xecut_usb_ir_dongle_keystroke(KEY_SPACE);
+				usb_ir_dongle_keystroke(KEY_SPACE);
 				break;
 			case 0x60:
 				furi_hal_hid_mouse_move(0, -10);
@@ -65,26 +65,6 @@ static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
 			case 0x1F:
 				furi_hal_hid_mouse_press(HID_MOUSE_BTN_RIGHT);
 				furi_hal_hid_mouse_release(HID_MOUSE_BTN_RIGHT);
-				break;
-			default: break;
-		}
-	} else
-	if (prot == IrdaProtocolSamsung32 && addr == 0x07) {
-		switch (cmd) {
-			case 0x07:
-				xecut_usb_ir_dongle_keystroke(KEY_UP_ARROW);
-				break;
-			case 0x0B:
-				xecut_usb_ir_dongle_keystroke(KEY_DOWN_ARROW);
-				break;
-			case 0x45:
-				xecut_usb_ir_dongle_keystroke(KEY_LEFT_ARROW);
-				break;
-			case 0x48:
-				xecut_usb_ir_dongle_keystroke(KEY_RIGHT_ARROW);
-				break;
-			case 0x4A: case 0x47:
-				xecut_usb_ir_dongle_keystroke(KEY_SPACE);
 				break;
 			default: break;
 		}
