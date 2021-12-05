@@ -1,6 +1,9 @@
 #include "usb_ir_dongle.h"
 #include "usb_ir_dongle_state.h"
 
+#define MOUSE_MOVE_SHORT 5
+#define MOUSE_MOVE_LONG 20
+
 
 static void usb_ir_dongle_keystroke(uint16_t button) {
 	furi_hal_hid_kb_press(button);
@@ -8,9 +11,9 @@ static void usb_ir_dongle_keystroke(uint16_t button) {
 }
 
 
-static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
-	if (prot == IrdaProtocolNEC && addr == 0x00) {
-		switch (cmd) {
+static void uid_irda_to_usb(const IrdaMessage *msg) {
+	if (msg->protocol == IrdaProtocolNEC && msg->address == 0x00) {
+		switch (msg->command) {
 			case 0x15: case 0x11:
 				usb_ir_dongle_keystroke(KEY_UP_ARROW);
 				break;
@@ -29,8 +32,8 @@ static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
 			default: break;
 		}
 	} else
-	if (prot == IrdaProtocolSamsung32 && addr == 0x07) {
-		switch (cmd) {
+	if (msg->protocol == IrdaProtocolSamsung32 && msg->address == 0x07) {
+		switch (msg->command) {
 			case 0x07:
 				usb_ir_dongle_keystroke(KEY_UP_ARROW);
 				break;
@@ -47,16 +50,16 @@ static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
 				usb_ir_dongle_keystroke(KEY_SPACE);
 				break;
 			case 0x60:
-				furi_hal_hid_mouse_move(0, -10);
+				furi_hal_hid_mouse_move(0, msg->repeat ? -MOUSE_MOVE_LONG : -MOUSE_MOVE_SHORT);
 				break;
 			case 0x61:
-				furi_hal_hid_mouse_move(0, 10);
+				furi_hal_hid_mouse_move(0, msg->repeat ? MOUSE_MOVE_LONG : MOUSE_MOVE_SHORT);
 				break;
 			case 0x65:
-				furi_hal_hid_mouse_move(-10, 0);
+				furi_hal_hid_mouse_move(msg->repeat ? -MOUSE_MOVE_LONG : -MOUSE_MOVE_SHORT, 0);
 				break;
 			case 0x62:
-				furi_hal_hid_mouse_move(10, 0);
+				furi_hal_hid_mouse_move(msg->repeat ? MOUSE_MOVE_LONG : MOUSE_MOVE_SHORT, 0);
 				break;
 			case 0x68:
 				furi_hal_hid_mouse_press(HID_MOUSE_BTN_LEFT);
@@ -86,7 +89,7 @@ void usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 	if (!state) return;
 
 	canvas_set_font(canvas, FontSecondary);
-	canvas_draw_str(canvas, 0, 10, state->display_text[0] ? state->display_text : "USB IR Dongle Bongle");
+	canvas_draw_str(canvas, 0, 10, state->irda_text[0] ? state->irda_text : "USB IR Dongle Bongle");
 
 	release_mutex((ValueMutex*)ctx, state);
 }
@@ -100,8 +103,8 @@ void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 	if (irda_worker_signal_is_decoded(sig)) {
 		const IrdaMessage* message = irda_worker_get_decoded_signal(sig);
 		snprintf(
-				state->display_text,
-				sizeof(state->display_text),
+				state->irda_text,
+				sizeof(state->irda_text),
 				"%s A:0x%0*lX C:0x%0*lX %s",
 				irda_get_protocol_name(message->protocol),
 				ROUND_UP_TO(irda_get_protocol_address_length(message->protocol), 4),
@@ -109,19 +112,19 @@ void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 				ROUND_UP_TO(irda_get_protocol_command_length(message->protocol), 4),
 				message->command,
 				message->repeat ? " R\r\n" : "\r\n");
-		uid_irda_to_usb(message->protocol, message->address, message->command);
+		uid_irda_to_usb(message);
 	} else {
 		const uint32_t* timings;
 		size_t timings_cnt;
 		irda_worker_get_raw_signal(sig, &timings, &timings_cnt);
 		snprintf(
-				state->display_text,
-				sizeof(state->display_text),
+				state->irda_text,
+				sizeof(state->irda_text),
 				"RAW %d samples\r\n",
 				timings_cnt);
 	}
 	view_port_update(state->view_port);
-	printf("%s\r\n", state->display_text);
+	printf("Received IRDA signal %s\n", state->irda_text);
 }
 
 
