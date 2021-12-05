@@ -103,11 +103,11 @@ void usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 	//canvas_set_font(canvas, FontPrimary);
 	//canvas_draw_str(canvas, 0, 10, "IR USB Dongle Bongle");
 	canvas_set_font(canvas, FontSecondary);
-	canvas_draw_str(canvas, 0, 31, "U/D App, L/R Remote");
-	canvas_draw_str(canvas, 0, 40, app_text);
-	canvas_draw_str(canvas, 0, 49, remote_text);
+	canvas_draw_str(canvas, 0, 37, "U/D App, L/R Remote");
+	canvas_draw_str(canvas, 0, 46, app_text);
+	canvas_draw_str(canvas, 0, 55, remote_text);
 	//canvas_draw_str(canvas, 0, 46, "Last IRDA Signal received:");
-	canvas_draw_str(canvas, 0, 58, state->irda_text[0] ? state->irda_text : "None");
+	canvas_draw_str(canvas, 0, 64, state->irda_text[0] ? state->irda_text : "None");
 
 	release_mutex((ValueMutex*)ctx, state);
 }
