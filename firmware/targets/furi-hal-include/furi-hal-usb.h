@@ -2,6 +2,10 @@
 
 #include "usb.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct UsbInterface UsbInterface;
 
 struct UsbInterface {
@@ -47,3 +51,7 @@ void furi_hal_usb_disable();
 /** Enable USB device
  */
 void furi_hal_usb_enable();
+
+#ifdef __cplusplus
+}
+#endif

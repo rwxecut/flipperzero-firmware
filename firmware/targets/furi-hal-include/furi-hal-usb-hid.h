@@ -1,5 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /** HID keyboard key codes */
 enum HidKeyboardKeys {
     KEY_NONE            = 0x00,
@@ -316,3 +320,7 @@ bool furi_hal_hid_mouse_release(uint8_t button);
  * @param      delta  number of scroll steps
  */
 bool furi_hal_hid_mouse_scroll(int8_t delta);
+
+#ifdef __cplusplus
+}
+#endif
