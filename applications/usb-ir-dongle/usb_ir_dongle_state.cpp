@@ -49,6 +49,15 @@ static void uid_irda_to_usb(const IrdaMessage *msg) {
 			case 0x4A: case 0x47:
 				usb_ir_dongle_keystroke(KEY_SPACE);
 				break;
+			case 0x10:
+				usb_ir_dongle_keystroke(KEY_MOD_LEFT_SHIFT | KEY_P);
+				break;
+			case 0x12:
+				usb_ir_dongle_keystroke(KEY_MOD_LEFT_SHIFT | KEY_N);
+				break;
+			case 0x0F:
+				usb_ir_dongle_keystroke(KEY_M);
+				break;
 			case 0x60:
 				furi_hal_hid_mouse_move(0, msg->repeat ? -MOUSE_MOVE_LONG : -MOUSE_MOVE_SHORT);
 				break;
