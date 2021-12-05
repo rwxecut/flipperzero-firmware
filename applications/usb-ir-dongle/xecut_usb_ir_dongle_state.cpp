@@ -35,7 +35,7 @@ static void uid_irda_to_usb(IrdaProtocol prot, uint32_t addr, uint32_t cmd) {
 void xecut_usb_ir_dongle_input_callback(InputEvent* input_event, void* ctx) {
 	furi_assert(ctx);
 	XecutUIDState *state = (XecutUIDState*)ctx;
-	XecutUIDEvent event = {.type = EventTypeInput, .input = *input_event};
+	XecutUIDEvent event = {.input = *input_event, .type = EventTypeInput};
 	osMessageQueuePut(state->event_queue, &event, 0, osWaitForever);
 }
 
@@ -86,7 +86,7 @@ void xecut_usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* s
 
 
 XecutUIDState* xecut_usb_ir_dongle_init(ValueMutex* state_mutex) {
-	XecutUIDState* state = furi_alloc(sizeof(XecutUIDState));
+	XecutUIDState* state = (XecutUIDState*)furi_alloc(sizeof(XecutUIDState));
 	state->worker = irda_worker_alloc();
 	irda_worker_rx_start(state->worker);
 	irda_worker_rx_set_received_signal_callback(state->worker, xecut_usb_ir_dongle_signal_received_callback, state);
@@ -96,7 +96,7 @@ XecutUIDState* xecut_usb_ir_dongle_init(ValueMutex* state_mutex) {
 	state->view_port = view_port_alloc();
 	view_port_draw_callback_set(state->view_port, xecut_usb_ir_dongle_render_callback, state_mutex);
 	view_port_input_callback_set(state->view_port, xecut_usb_ir_dongle_input_callback, state);
-	state->gui = furi_record_open("gui");
+	state->gui = (Gui*)furi_record_open("gui");
 	gui_add_view_port(state->gui, state->view_port, GuiLayerFullscreen);
 	return state;
 }

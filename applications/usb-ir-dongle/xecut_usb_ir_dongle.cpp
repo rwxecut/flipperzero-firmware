@@ -2,7 +2,7 @@
 #include "xecut_usb_ir_dongle_state.h"
 
 
-int32_t xecut_usb_ir_dongle_app(void* p) {
+extern "C" int32_t xecut_usb_ir_dongle_app(void* p) {
 	ValueMutex state_mutex;
 	XecutUIDState *state = xecut_usb_ir_dongle_init(&state_mutex);
 	if (!init_mutex(&state_mutex, state, sizeof(XecutUIDState))) {
