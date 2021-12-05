@@ -1,6 +1,7 @@
 #pragma once
 #include <gui/icon.h>
 
+extern const Icon I_irusb;
 extern const Icon I_Certification2_119x30;
 extern const Icon I_Certification1_103x23;
 extern const Icon A_BadBattery_128x51;
