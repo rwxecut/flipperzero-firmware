@@ -132,6 +132,7 @@ void usb_ir_dongle_loop(UIDState* state, ValueMutex* state_mutex) {
 					break;
 				case InputKeyDown:
 					FURI_LOG_I(TAG, "Pressed Down");
+					// TODO: next app
 					break;
 				case InputKeyOk:
 					FURI_LOG_I(TAG, "Pressed OK");
