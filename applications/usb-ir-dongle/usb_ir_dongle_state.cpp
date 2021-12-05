@@ -138,23 +138,46 @@ void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 
 UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
 	UIDState* state = (UIDState*)furi_alloc(sizeof(UIDState));
+
 	state->worker = irda_worker_alloc();
 	irda_worker_rx_start(state->worker);
 	irda_worker_rx_set_received_signal_callback(state->worker, usb_ir_dongle_signal_received_callback, state);
 	irda_worker_rx_enable_blink_on_receiving(state->worker, true);
+
+	state->storage = (Storage*)furi_record_open("storage");
+    const uint8_t filename_size = 100;
+    char* filename = (char*)furi_alloc(filename_size);
+    FileInfo fileinfo;
+    File* assets_dir = storage_file_alloc(state->storage);
+    int result = 0;
+
+	storage_dir_open(assets_dir, "/ext/usb_ir_dongle/remotes");
+    do {
+        result = storage_dir_read(assets_dir, &fileinfo, filename, filename_size);
+        if(result) {
+			state->remote_list.push_back(filename);
+        }
+    } while(result);
+    storage_dir_close(assets_dir);
+	storage_dir_open(assets_dir, "/ext/usb_ir_dongle/apps");
+    do {
+        result = storage_dir_read(assets_dir, &fileinfo, filename, filename_size);
+        if(result) {
+			state->app_list.push_back(filename);
+        }
+    } while(result);
+    storage_dir_close(assets_dir);
+	state->app_list_pos = state->remote_list_pos = 0;
+
 	state->event_queue = osMessageQueueNew(8, sizeof(UIDEvent), NULL);
 	furi_check(state->event_queue);
+
 	state->view_port = view_port_alloc();
 	view_port_draw_callback_set(state->view_port, usb_ir_dongle_render_callback, state_mutex);
 	view_port_input_callback_set(state->view_port, usb_ir_dongle_input_callback, state);
 	state->gui = (Gui*)furi_record_open("gui");
 	gui_add_view_port(state->gui, state->view_port, GuiLayerFullscreen);
 
-	state->app_list.emplace_back("App 1");
-	state->app_list.emplace_back("App 2");
-	state->remote_list.emplace_back("Remote 1");
-	state->remote_list.emplace_back("Remote 2");
-	state->app_list_pos = state->remote_list_pos = 0;
 	return state;
 }
 
@@ -164,6 +187,7 @@ void usb_ir_dongle_free(UIDState* state) {
 	gui_remove_view_port(state->gui, state->view_port);
 	view_port_free(state->view_port);
 	furi_record_close("gui");
+	furi_record_close("storage");
 	osMessageQueueDelete(state->event_queue);
 	irda_worker_rx_stop(state->worker);
 	irda_worker_free(state->worker);

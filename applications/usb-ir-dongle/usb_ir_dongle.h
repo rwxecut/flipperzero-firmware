@@ -9,6 +9,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <storage/storage.h>
 
 #define TAG "USB_IR_DONGLE"
 
@@ -32,6 +33,7 @@ typedef struct {
 	std::map<IrdaMessage, uint16_t> dispatch_table;
 	IrdaWorker* worker;
 
+	Storage* storage;
 	char irda_text[64];
 	std::vector<std::string> app_list, remote_list;
 	uint8_t app_list_pos, remote_list_pos;
