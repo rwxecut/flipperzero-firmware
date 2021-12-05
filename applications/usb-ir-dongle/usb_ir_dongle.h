@@ -7,10 +7,11 @@
 #include <irda.h>
 #include <irda_worker.h>
 #include <map>
-#include <memory>
-
+#include <vector>
+#include <string>
 
 #define TAG "USB_IR_DONGLE"
+
 
 namespace std {
 template<>
@@ -27,12 +28,15 @@ struct less<IrdaMessage>
 
 
 typedef struct {
-	char irda_text[64];
 	osMessageQueueId_t event_queue;
 	ViewPort* view_port;
 	Gui* gui;
 	std::map<IrdaMessage, uint16_t> dispatch_table;
 	IrdaWorker* worker;
+
+	char irda_text[64];
+	std::vector<std::string> app_list, remote_list;
+	uint8_t app_list_pos, remote_list_pos;
 } UIDState;
 
 

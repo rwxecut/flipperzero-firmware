@@ -88,8 +88,12 @@ void usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 	UIDState *state = (UIDState*)acquire_mutex((ValueMutex*)ctx, 25);
 	if (!state) return;
 
+	const char *app_text = state->app_list.size() > 0 ? state->app_list[state->app_list_pos].c_str() : "Empty";
+	const char *remote_text = state->remote_list.size() > 0 ? state->remote_list[state->remote_list_pos].c_str() : "Empty";
 	canvas_set_font(canvas, FontSecondary);
-	canvas_draw_str(canvas, 0, 10, state->irda_text[0] ? state->irda_text : "USB IR Dongle Bongle");
+	canvas_draw_str(canvas, 0, 10, app_text);
+	canvas_draw_str(canvas, 0, 19, remote_text);
+	canvas_draw_str(canvas, 0, 28, state->irda_text[0] ? state->irda_text : "USB IR Dongle Bongle");
 
 	release_mutex((ValueMutex*)ctx, state);
 }
@@ -141,6 +145,12 @@ UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
 	view_port_input_callback_set(state->view_port, usb_ir_dongle_input_callback, state);
 	state->gui = (Gui*)furi_record_open("gui");
 	gui_add_view_port(state->gui, state->view_port, GuiLayerFullscreen);
+
+	state->app_list.emplace_back("App 1");
+	state->app_list.emplace_back("App 2");
+	state->remote_list.emplace_back("Remote 1");
+	state->remote_list.emplace_back("Remote 2");
+	state->app_list_pos = state->remote_list_pos = 0;
 	return state;
 }
 
@@ -165,17 +175,24 @@ void usb_ir_dongle_loop(UIDState* state, ValueMutex* state_mutex) {
 		if (event_status == osOK && event.type == EventTypeInput && event.input.type == InputTypePress) {
 			switch (event.input.key) {
 				case InputKeyLeft:
-					FURI_LOG_I(TAG, "Pressed Left");
+					_state->remote_list_pos--;
+					if (_state->remote_list_pos == UINT8_MAX)
+						state->remote_list_pos = state->remote_list.size() - 1;
 					break;
 				case InputKeyRight:
-					FURI_LOG_I(TAG, "Pressed Right");
+					_state->remote_list_pos++;
+					if (_state->remote_list_pos == state->remote_list.size())
+						state->remote_list_pos = 0;
 					break;
 				case InputKeyUp:
-					FURI_LOG_I(TAG, "Pressed Up");
+					_state->app_list_pos--;
+					if (_state->app_list_pos == UINT8_MAX)
+						state->app_list_pos = state->app_list.size() - 1;
 					break;
 				case InputKeyDown:
-					FURI_LOG_I(TAG, "Pressed Down");
-					// TODO: next app
+					_state->app_list_pos++;
+					if (_state->app_list_pos == state->app_list.size())
+						state->app_list_pos = 0;
 					break;
 				case InputKeyOk:
 					FURI_LOG_I(TAG, "Pressed OK");
