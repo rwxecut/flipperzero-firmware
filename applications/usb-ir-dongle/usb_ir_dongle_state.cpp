@@ -10,54 +10,36 @@ static void usb_ir_dongle_keystroke(uint16_t button) {
 	furi_hal_hid_kb_release(button);
 }
 
+static void usb_ir_dongle_init_dispatch(UIDState* state) {
+	state->dispatch_table = {
+		{{IrdaProtocolNEC, 0x00, 0x15}, KEY_UP_ARROW},
+		{{IrdaProtocolNEC, 0x00, 0x11}, KEY_UP_ARROW},
+		{{IrdaProtocolNEC, 0x00, 0x7}, KEY_DOWN_ARROW},
+		{{IrdaProtocolNEC, 0x00, 0x10}, KEY_DOWN_ARROW},
+		{{IrdaProtocolNEC, 0x00, 0x44}, KEY_LEFT_ARROW},
+		{{IrdaProtocolNEC, 0x00, 0x40}, KEY_RIGHT_ARROW},
+		{{IrdaProtocolNEC, 0x00, 0x43}, KEY_SPACE},
 
-static void uid_irda_to_usb(const IrdaMessage *msg) {
-	if (msg->protocol == IrdaProtocolNEC && msg->address == 0x00) {
+		{{IrdaProtocolSamsung32, 0x07, 0x07}, KEY_UP_ARROW},
+		{{IrdaProtocolSamsung32, 0x07, 0x0B}, KEY_DOWN_ARROW},
+		{{IrdaProtocolSamsung32, 0x07, 0x45}, KEY_LEFT_ARROW},
+		{{IrdaProtocolSamsung32, 0x07, 0x48}, KEY_RIGHT_ARROW},
+		{{IrdaProtocolSamsung32, 0x07, 0x4A}, KEY_SPACE},
+		{{IrdaProtocolSamsung32, 0x07, 0x47}, KEY_SPACE},
+		{{IrdaProtocolSamsung32, 0x07, 0x10}, KEY_P | KEY_MOD_LEFT_SHIFT},
+		{{IrdaProtocolSamsung32, 0x07, 0x12}, KEY_N | KEY_MOD_LEFT_SHIFT},
+		{{IrdaProtocolSamsung32, 0x07, 0x0F}, KEY_M},
+	};
+}
+
+
+static void uid_irda_to_usb(const IrdaMessage *msg, const UIDState* state) {
+	auto dispatch_action = state->dispatch_table.find(*msg);
+	if (dispatch_action != state->dispatch_table.end()) {
+		usb_ir_dongle_keystroke(dispatch_action->second);
+	}
+	else if (msg->protocol == IrdaProtocolSamsung32 && msg->address == 0x07) {
 		switch (msg->command) {
-			case 0x15: case 0x11:
-				usb_ir_dongle_keystroke(KEY_UP_ARROW);
-				break;
-			case 0x07: case 0x10:
-				usb_ir_dongle_keystroke(KEY_DOWN_ARROW);
-				break;
-			case 0x44:
-				usb_ir_dongle_keystroke(KEY_LEFT_ARROW);
-				break;
-			case 0x40:
-				usb_ir_dongle_keystroke(KEY_RIGHT_ARROW);
-				break;
-			case 0x43:
-				usb_ir_dongle_keystroke(KEY_SPACE);
-				break;
-			default: break;
-		}
-	} else
-	if (msg->protocol == IrdaProtocolSamsung32 && msg->address == 0x07) {
-		switch (msg->command) {
-			case 0x07:
-				usb_ir_dongle_keystroke(KEY_UP_ARROW);
-				break;
-			case 0x0B:
-				usb_ir_dongle_keystroke(KEY_DOWN_ARROW);
-				break;
-			case 0x45:
-				usb_ir_dongle_keystroke(KEY_LEFT_ARROW);
-				break;
-			case 0x48:
-				usb_ir_dongle_keystroke(KEY_RIGHT_ARROW);
-				break;
-			case 0x4A: case 0x47:
-				usb_ir_dongle_keystroke(KEY_SPACE);
-				break;
-			case 0x10:
-				usb_ir_dongle_keystroke(KEY_MOD_LEFT_SHIFT | KEY_P);
-				break;
-			case 0x12:
-				usb_ir_dongle_keystroke(KEY_MOD_LEFT_SHIFT | KEY_N);
-				break;
-			case 0x0F:
-				usb_ir_dongle_keystroke(KEY_M);
-				break;
 			case 0x60:
 				furi_hal_hid_mouse_move(0, msg->repeat ? -MOUSE_MOVE_LONG : -MOUSE_MOVE_SHORT);
 				break;
@@ -130,7 +112,7 @@ void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 				ROUND_UP_TO(irda_get_protocol_command_length(message->protocol), 4),
 				message->command,
 				message->repeat ? " R\r\n" : "\r\n");
-		uid_irda_to_usb(message);
+		uid_irda_to_usb(message, state);
 	} else {
 		const uint32_t* timings;
 		size_t timings_cnt;
@@ -178,6 +160,8 @@ UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
     } while(result);
     storage_dir_close(assets_dir);
 	state->app_list_pos = state->remote_list_pos = 0;
+
+	usb_ir_dongle_init_dispatch((UIDState*)state);
 
 	state->event_queue = osMessageQueueNew(8, sizeof(UIDEvent), NULL);
 	furi_check(state->event_queue);
