@@ -21,5 +21,23 @@ PB_BIND(PB_System_DeviceInfoRequest, PB_System_DeviceInfoRequest, AUTO)
 PB_BIND(PB_System_DeviceInfoResponse, PB_System_DeviceInfoResponse, AUTO)
 
 
+PB_BIND(PB_System_FactoryResetRequest, PB_System_FactoryResetRequest, AUTO)
+
+
+PB_BIND(PB_System_GetDateTimeRequest, PB_System_GetDateTimeRequest, AUTO)
+
+
+PB_BIND(PB_System_GetDateTimeResponse, PB_System_GetDateTimeResponse, AUTO)
+
+
+PB_BIND(PB_System_SetDateTimeRequest, PB_System_SetDateTimeRequest, AUTO)
+
+
+PB_BIND(PB_System_DateTime, PB_System_DateTime, AUTO)
+
+
+PB_BIND(PB_System_PlayAudiovisualAlertRequest, PB_System_PlayAudiovisualAlertRequest, AUTO)
+
+
 
 

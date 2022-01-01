@@ -8,7 +8,6 @@
 #include "portmacro.h"
 #include "storage/filesystem-api-defines.h"
 #include "storage/storage.h"
-#include <furi-hal-lock.h>
 #include <stdint.h>
 #include <power/power_service/power.h>
 #include "helpers/desktop_animation.h"
@@ -155,14 +154,14 @@ int32_t desktop_srv(void* p) {
 
     bool loaded = LOAD_DESKTOP_SETTINGS(&desktop->settings);
     if(!loaded) {
-        furi_hal_lock_set(false);
+        furi_hal_rtc_reset_flag(FuriHalRtcFlagLock);
         memset(&desktop->settings, 0, sizeof(desktop->settings));
         SAVE_DESKTOP_SETTINGS(&desktop->settings);
     }
 
     scene_manager_next_scene(desktop->scene_manager, DesktopSceneMain);
 
-    if(furi_hal_lock_get()) {
+    if(furi_hal_rtc_is_flag_set(FuriHalRtcFlagLock)) {
         furi_hal_usb_disable();
         scene_manager_set_scene_state(
             desktop->scene_manager, DesktopSceneLocked, DesktopLockedWithPin);
@@ -175,6 +174,10 @@ int32_t desktop_srv(void* p) {
 
     if(!furi_hal_version_do_i_belong_here()) {
         scene_manager_next_scene(desktop->scene_manager, DesktopSceneHwMismatch);
+    }
+
+    if(furi_hal_rtc_get_fault_data()) {
+        scene_manager_next_scene(desktop->scene_manager, DesktopSceneFault);
     }
 
     view_dispatcher_run(desktop->view_dispatcher);
