@@ -11,7 +11,7 @@
 #include <string>
 #include <storage/storage.h>
 
-#define TAG "USB_IR_DONGLE"
+#define TAG "IRUSB"
 
 
 namespace std {
@@ -37,7 +37,7 @@ typedef struct {
 	char irda_text[64];
 	std::vector<std::string> app_list, remote_list;
 	uint8_t app_list_pos, remote_list_pos;
-} UIDState;
+} IrusbState;
 
 
 typedef enum {
@@ -49,4 +49,4 @@ typedef struct {
 		InputEvent input;
 	};
 	EventType type;
-} UIDEvent;
+} IrusbEvent;

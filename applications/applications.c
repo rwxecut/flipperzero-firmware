@@ -44,7 +44,7 @@ extern int32_t vibro_test_app(void* p);
 extern int32_t bt_hid_app(void* p);
 
 // Plugins
-extern int32_t usb_ir_dongle_app(void* p);
+extern int32_t irusb_app(void* p);
 extern int32_t music_player_app(void* p);
 extern int32_t snake_game_app(void* p);
 
@@ -211,8 +211,8 @@ const size_t FLIPPER_ON_SYSTEM_START_COUNT =
 
 // Plugin menu
 const FlipperApplication FLIPPER_PLUGINS[] = {
-#ifdef APP_USB_IR_DONGLE
-    {.app = usb_ir_dongle_app, .name = "USB IR Dongle", .stack_size = 4096, .icon = NULL},
+#ifdef APP_IRUSB
+    {.app = irusb_app, .name = "IR USB dongle", .stack_size = 4096, .icon = NULL},
 #endif
 
 #ifdef APP_BLE_HID

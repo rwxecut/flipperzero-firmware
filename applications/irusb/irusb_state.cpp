@@ -1,16 +1,16 @@
-#include "usb_ir_dongle.h"
-#include "usb_ir_dongle_state.h"
+#include "irusb.h"
+#include "irusb_state.h"
 
 #define MOUSE_MOVE_SHORT 5
 #define MOUSE_MOVE_LONG 20
 
 
-static void usb_ir_dongle_keystroke(uint16_t button) {
+static void irusb_keystroke(uint16_t button) {
 	furi_hal_hid_kb_press(button);
 	furi_hal_hid_kb_release(button);
 }
 
-static void usb_ir_dongle_init_dispatch(UIDState* state) {
+static void irusb_init_dispatch(IrusbState* state) {
 	state->dispatch_table = {
 		{{IrdaProtocolNEC, 0x00, 0x15}, KEY_UP_ARROW},
 		{{IrdaProtocolNEC, 0x00, 0x11}, KEY_UP_ARROW},
@@ -33,10 +33,10 @@ static void usb_ir_dongle_init_dispatch(UIDState* state) {
 }
 
 
-static void uid_irda_to_usb(const IrdaMessage *msg, const UIDState* state) {
+static void irusb_irda_to_usb(const IrdaMessage *msg, const IrusbState* state) {
 	auto dispatch_action = state->dispatch_table.find(*msg);
 	if (dispatch_action != state->dispatch_table.end()) {
-		usb_ir_dongle_keystroke(dispatch_action->second);
+		irusb_keystroke(dispatch_action->second);
 	}
 	else if (msg->protocol == IrdaProtocolSamsung32 && msg->address == 0x07) {
 		switch (msg->command) {
@@ -66,17 +66,17 @@ static void uid_irda_to_usb(const IrdaMessage *msg, const UIDState* state) {
 }
 
 
-void usb_ir_dongle_input_callback(InputEvent* input_event, void* ctx) {
+void irusb_input_callback(InputEvent* input_event, void* ctx) {
 	furi_assert(ctx);
-	UIDState *state = (UIDState*)ctx;
-	UIDEvent event = {.input = *input_event, .type = EventTypeInput};
+	IrusbState *state = (IrusbState*)ctx;
+	IrusbEvent event = {.input = *input_event, .type = EventTypeInput};
 	osMessageQueuePut(state->event_queue, &event, 0, osWaitForever);
 }
 
 
-void usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
+void irusb_render_callback(Canvas* canvas, void* ctx) {
 	furi_assert(ctx);
-	UIDState *state = (UIDState*)acquire_mutex((ValueMutex*)ctx, 25);
+	IrusbState *state = (IrusbState*)acquire_mutex((ValueMutex*)ctx, 25);
 	if (!state) return;
 
 	const char *app_text = state->app_list.size() > 0 ? state->app_list[state->app_list_pos].c_str() : "Empty";
@@ -93,11 +93,11 @@ void usb_ir_dongle_render_callback(Canvas* canvas, void* ctx) {
 }
 
 
-void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
+void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 {
 	furi_assert(ctx);
 	furi_assert(sig);
-	UIDState *state = (UIDState*)ctx;
+	IrusbState *state = (IrusbState*)ctx;
 	if (irda_worker_signal_is_decoded(sig)) {
 		const IrdaMessage* message = irda_worker_get_decoded_signal(sig);
 		snprintf(
@@ -110,7 +110,7 @@ void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 				ROUND_UP_TO(irda_get_protocol_command_length(message->protocol), 4),
 				message->command,
 				message->repeat ? " R\r\n" : "\r\n");
-		uid_irda_to_usb(message, state);
+		irusb_irda_to_usb(message, state);
 	} else {
 		const uint32_t* timings;
 		size_t timings_cnt;
@@ -126,12 +126,12 @@ void usb_ir_dongle_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 }
 
 
-UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
-	UIDState* state = (UIDState*)furi_alloc(sizeof(UIDState));
+IrusbState* irusb_init(ValueMutex* state_mutex) {
+	IrusbState* state = (IrusbState*)furi_alloc(sizeof(IrusbState));
 
 	state->worker = irda_worker_alloc();
 	irda_worker_rx_start(state->worker);
-	irda_worker_rx_set_received_signal_callback(state->worker, usb_ir_dongle_signal_received_callback, state);
+	irda_worker_rx_set_received_signal_callback(state->worker, irusb_signal_received_callback, state);
 	irda_worker_rx_enable_blink_on_receiving(state->worker, true);
 
 	state->storage = (Storage*)furi_record_open("storage");
@@ -141,7 +141,7 @@ UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
     File* assets_dir = storage_file_alloc(state->storage);
     int result = 0;
 
-	storage_dir_open(assets_dir, "/ext/usb_ir_dongle/remotes");
+	storage_dir_open(assets_dir, "/ext/irusb/remotes");
     do {
         result = storage_dir_read(assets_dir, &fileinfo, filename, filename_size);
         if(result) {
@@ -149,7 +149,7 @@ UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
         }
     } while(result);
     storage_dir_close(assets_dir);
-	storage_dir_open(assets_dir, "/ext/usb_ir_dongle/apps");
+	storage_dir_open(assets_dir, "/ext/irusb/apps");
     do {
         result = storage_dir_read(assets_dir, &fileinfo, filename, filename_size);
         if(result) {
@@ -159,14 +159,14 @@ UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
     storage_dir_close(assets_dir);
 	state->app_list_pos = state->remote_list_pos = 0;
 
-	usb_ir_dongle_init_dispatch((UIDState*)state);
+	irusb_init_dispatch((IrusbState*)state);
 
-	state->event_queue = osMessageQueueNew(8, sizeof(UIDEvent), NULL);
+	state->event_queue = osMessageQueueNew(8, sizeof(IrusbEvent), NULL);
 	furi_check(state->event_queue);
 
 	state->view_port = view_port_alloc();
-	view_port_draw_callback_set(state->view_port, usb_ir_dongle_render_callback, state_mutex);
-	view_port_input_callback_set(state->view_port, usb_ir_dongle_input_callback, state);
+	view_port_draw_callback_set(state->view_port, irusb_render_callback, state_mutex);
+	view_port_input_callback_set(state->view_port, irusb_input_callback, state);
 	state->gui = (Gui*)furi_record_open("gui");
 	gui_add_view_port(state->gui, state->view_port, GuiLayerFullscreen);
 
@@ -174,7 +174,7 @@ UIDState* usb_ir_dongle_init(ValueMutex* state_mutex) {
 }
 
 
-void usb_ir_dongle_free(UIDState* state) {
+void irusb_free(IrusbState* state) {
 	view_port_enabled_set(state->view_port, false);
 	gui_remove_view_port(state->gui, state->view_port);
 	view_port_free(state->view_port);
@@ -187,11 +187,11 @@ void usb_ir_dongle_free(UIDState* state) {
 }
 
 
-void usb_ir_dongle_loop(UIDState* state, ValueMutex* state_mutex) {
-	UIDEvent event;
+void irusb_loop(IrusbState* state, ValueMutex* state_mutex) {
+	IrusbEvent event;
 	for (bool running = true; running;) {
 		osStatus_t event_status = osMessageQueueGet(state->event_queue, &event, NULL, 100);
-		UIDState *_state = (UIDState*)acquire_mutex_block(state_mutex);
+		IrusbState *_state = (IrusbState*)acquire_mutex_block(state_mutex);
 		if (event_status == osOK && event.type == EventTypeInput && event.input.type == InputTypePress) {
 			switch (event.input.key) {
 				case InputKeyLeft:
