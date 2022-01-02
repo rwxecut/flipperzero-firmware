@@ -83,7 +83,7 @@ static void irusb_irda_to_usb(const IrdaMessage *msg, const IrusbState* state) {
 }
 
 
-void irusb_input_callback(InputEvent* input_event, void* ctx) {
+static void irusb_input_callback(InputEvent* input_event, void* ctx) {
 	furi_assert(ctx);
 	IrusbState *state = (IrusbState*)ctx;
 	IrusbEvent event = {.input = *input_event, .type = EventTypeInput};
@@ -91,7 +91,7 @@ void irusb_input_callback(InputEvent* input_event, void* ctx) {
 }
 
 
-void irusb_render_callback(Canvas* canvas, void* ctx) {
+static void irusb_render_callback(Canvas* canvas, void* ctx) {
 	furi_assert(ctx);
 	IrusbState *state = (IrusbState*)acquire_mutex((ValueMutex*)ctx, 25);
 	if (!state) return;
@@ -110,7 +110,7 @@ void irusb_render_callback(Canvas* canvas, void* ctx) {
 }
 
 
-void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
+static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 {
 	furi_assert(ctx);
 	furi_assert(sig);
