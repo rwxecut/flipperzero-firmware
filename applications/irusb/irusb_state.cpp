@@ -8,8 +8,19 @@
 #include <irda.h>
 #include <irda_worker.h>
 #include <storage/storage.h>
+#include "irusb_config.h"
 #include "irusb_state.h"
 
+typedef enum {
+    EventTypeInput
+} EventType;
+
+typedef struct {
+    union {
+        InputEvent input;
+    };
+    EventType type;
+} IrusbEvent;
 
 static void irusb_keystroke(uint16_t button) {
 	furi_hal_hid_kb_press(button);

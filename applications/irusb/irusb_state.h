@@ -9,10 +9,6 @@
 #include <irda_worker.h>
 #include <storage/storage.h>
 
-#define TAG "IRUSB"
-#define MOUSE_MOVE_SHORT 5
-#define MOUSE_MOVE_LONG 20
-
 
 namespace std {
     template<>
@@ -40,20 +36,6 @@ typedef struct {
 } IrusbState;
 
 
-typedef enum {
-    EventTypeInput
-} EventType;
-
-typedef struct {
-    union {
-        InputEvent input;
-    };
-    EventType type;
-} IrusbEvent;
-
-void irusb_input_callback(InputEvent* input_event, void* ctx);
-void irusb_tick_callback(void* ctx);
-void irusb_render_callback(Canvas* canvas, void* ctx);
 IrusbState* irusb_init(ValueMutex* state_mutex);
-void irusb_free(IrusbState* state);
 void irusb_loop(IrusbState* state, ValueMutex* state_mutex);
+void irusb_free(IrusbState* state);
