@@ -1,8 +1,14 @@
-#include "irusb.h"
+#include <map>
+#include <vector>
+#include <string>
+#include <furi.h>
+#include <furi-hal.h>
+#include <gui/gui.h>
+#include <input/input.h>
+#include <irda.h>
+#include <irda_worker.h>
+#include <storage/storage.h>
 #include "irusb_state.h"
-
-#define MOUSE_MOVE_SHORT 5
-#define MOUSE_MOVE_LONG 20
 
 
 static void irusb_keystroke(uint16_t button) {

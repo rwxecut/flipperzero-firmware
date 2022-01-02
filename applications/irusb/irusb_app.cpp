@@ -1,4 +1,5 @@
-#include "irusb.h"
+#include <furi.h>
+#include <furi-hal.h>
 #include "irusb_state.h"
 
 
