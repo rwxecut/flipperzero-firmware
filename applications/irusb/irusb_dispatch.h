@@ -26,6 +26,8 @@ extern "C" {
 #endif
 
 IrusbDispatchTable* irusb_dispatch_init(void);
+uint16_t irusb_dispatch(const IrusbDispatchTable* dispatch_table,
+    const IrdaMessage* msg);
 void irusb_dispatch_free(IrusbDispatchTable* dispatch_table);
 
 #ifdef __cplusplus

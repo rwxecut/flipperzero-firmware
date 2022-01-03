@@ -28,9 +28,9 @@ static void irusb_keystroke(uint16_t button) {
 }
 
 static void irusb_irda_to_usb(const IrdaMessage *msg, const IrusbState* state) {
-	auto dispatch_action = state->dispatch_table->find(*msg);
-	if (dispatch_action != state->dispatch_table->end()) {
-		irusb_keystroke(dispatch_action->second);
+	uint16_t dispatch_action = irusb_dispatch(state->dispatch_table, msg);
+	if (dispatch_action != KEY_NONE) {
+		irusb_keystroke(dispatch_action);
 	}
 	else if (msg->protocol == IrdaProtocolSamsung32 && msg->address == 0x07) {
 		switch (msg->command) {

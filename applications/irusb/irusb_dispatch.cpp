@@ -25,6 +25,16 @@ IrusbDispatchTable* irusb_dispatch_init(void) {
     return dispatch_table;
 }
 
+uint16_t irusb_dispatch(const IrusbDispatchTable* dispatch_table,
+    const IrdaMessage* msg) {
+    auto dispatch_action = dispatch_table->find(*msg);
+    if (dispatch_action != dispatch_table->end()) {
+        return dispatch_action->second;
+    } else {
+        return KEY_NONE;
+    }
+}
+
 void irusb_dispatch_free(IrusbDispatchTable* dispatch_table) {
     delete dispatch_table;
 }
