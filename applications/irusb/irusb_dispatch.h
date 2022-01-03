@@ -1,6 +1,9 @@
 #pragma once
 
+#ifdef __cplusplus
 #include <map>
+#endif
+
 #include "irda.h"
 
 typedef enum {

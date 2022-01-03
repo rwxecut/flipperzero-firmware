@@ -4,7 +4,7 @@
 #include "irusb_state.h"
 
 
-extern "C" int32_t irusb_app(void* p) {
+int32_t irusb_app(void* p) {
 	ValueMutex state_mutex;
 	IrusbState *state = irusb_init(&state_mutex);
 	if (!init_mutex(&state_mutex, state, sizeof(IrusbState))) {
