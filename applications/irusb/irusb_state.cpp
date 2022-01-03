@@ -10,6 +10,7 @@
 #include <storage/storage.h>
 #include "irusb_config.h"
 #include "irusb_state.h"
+#include "irusb_dispatch.h"
 
 typedef enum {
     EventTypeInput
@@ -22,40 +23,23 @@ typedef struct {
     EventType type;
 } IrusbEvent;
 
-static void irusb_keystroke(uint16_t button) {
-	furi_hal_hid_kb_press(button);
-	furi_hal_hid_kb_release(button);
-}
-
-static void irusb_irda_to_usb(const IrdaMessage *msg, const IrusbState* state) {
-	uint16_t dispatch_action = irusb_dispatch(state->dispatch_table, msg);
-	if (dispatch_action != KEY_NONE) {
-		irusb_keystroke(dispatch_action);
-	}
-	else if (msg->protocol == IrdaProtocolSamsung32 && msg->address == 0x07) {
-		switch (msg->command) {
-			case 0x60:
-				furi_hal_hid_mouse_move(0, msg->repeat ? -MOUSE_MOVE_LONG : -MOUSE_MOVE_SHORT);
-				break;
-			case 0x61:
-				furi_hal_hid_mouse_move(0, msg->repeat ? MOUSE_MOVE_LONG : MOUSE_MOVE_SHORT);
-				break;
-			case 0x65:
-				furi_hal_hid_mouse_move(msg->repeat ? -MOUSE_MOVE_LONG : -MOUSE_MOVE_SHORT, 0);
-				break;
-			case 0x62:
-				furi_hal_hid_mouse_move(msg->repeat ? MOUSE_MOVE_LONG : MOUSE_MOVE_SHORT, 0);
-				break;
-			case 0x68:
-				furi_hal_hid_mouse_press(HID_MOUSE_BTN_LEFT);
-				furi_hal_hid_mouse_release(HID_MOUSE_BTN_LEFT);
-				break;
-			case 0x1F:
-				furi_hal_hid_mouse_press(HID_MOUSE_BTN_RIGHT);
-				furi_hal_hid_mouse_release(HID_MOUSE_BTN_RIGHT);
-				break;
-			default: break;
-		}
+static void irusb_do_action(IrusbAction action) {
+	switch(action.type) {
+		case IrusbActionKb:
+			furi_hal_hid_kb_press(action.kb_keycode);
+			furi_hal_hid_kb_release(action.kb_keycode);
+			break;
+		case IrusbActionMouseMove:
+			// TODO: handle repeat and long/short mouse movements in dispatch
+			furi_hal_hid_mouse_move(action.mouse_move.dx, action.mouse_move.dy);
+			break;
+		case IrusbActionMouseClick:
+			furi_hal_hid_mouse_press(action.mouse_click_button);
+			furi_hal_hid_mouse_release(action.mouse_click_button);
+			break;
+		case IrusbActionNone:
+		default:
+			break;
 	}
 }
 
@@ -104,7 +88,8 @@ static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 				ROUND_UP_TO(irda_get_protocol_command_length(message->protocol), 4),
 				message->command,
 				message->repeat ? " R\r\n" : "\r\n");
-		irusb_irda_to_usb(message, state);
+		IrusbAction action = irusb_dispatch(state->dispatch_table, message);
+		irusb_do_action(action);
 	} else {
 		const uint32_t* timings;
 		size_t timings_cnt;
