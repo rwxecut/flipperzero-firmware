@@ -8,25 +8,14 @@
 #include <irda.h>
 #include <irda_worker.h>
 #include <storage/storage.h>
-
-
-namespace std {
-    template<>
-    struct less<IrdaMessage> {
-        bool operator()(const IrdaMessage& m1, const IrdaMessage& m2) const {
-            return (m1.protocol < m2.protocol)
-                || (m1.protocol == m2.protocol && m1.address < m2.address)
-                || (m1.address == m2.address && m1.command < m2.command);
-        }
-    };
-}
+#include "irusb_dispatch.h"
 
 
 typedef struct {
     osMessageQueueId_t event_queue;
     ViewPort* view_port;
     Gui* gui;
-    std::map<IrdaMessage, uint16_t> dispatch_table;
+    IrusbDispatchTable* dispatch_table;
     IrdaWorker* worker;
 
     Storage* storage;

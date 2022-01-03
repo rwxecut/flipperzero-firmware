@@ -27,32 +27,9 @@ static void irusb_keystroke(uint16_t button) {
 	furi_hal_hid_kb_release(button);
 }
 
-static void irusb_init_dispatch(IrusbState* state) {
-	state->dispatch_table = {
-		{{IrdaProtocolNEC, 0x00, 0x15}, KEY_UP_ARROW},
-		{{IrdaProtocolNEC, 0x00, 0x11}, KEY_UP_ARROW},
-		{{IrdaProtocolNEC, 0x00, 0x7}, KEY_DOWN_ARROW},
-		{{IrdaProtocolNEC, 0x00, 0x10}, KEY_DOWN_ARROW},
-		{{IrdaProtocolNEC, 0x00, 0x44}, KEY_LEFT_ARROW},
-		{{IrdaProtocolNEC, 0x00, 0x40}, KEY_RIGHT_ARROW},
-		{{IrdaProtocolNEC, 0x00, 0x43}, KEY_SPACE},
-
-		{{IrdaProtocolSamsung32, 0x07, 0x07}, KEY_UP_ARROW},
-		{{IrdaProtocolSamsung32, 0x07, 0x0B}, KEY_DOWN_ARROW},
-		{{IrdaProtocolSamsung32, 0x07, 0x45}, KEY_LEFT_ARROW},
-		{{IrdaProtocolSamsung32, 0x07, 0x48}, KEY_RIGHT_ARROW},
-		{{IrdaProtocolSamsung32, 0x07, 0x4A}, KEY_SPACE},
-		{{IrdaProtocolSamsung32, 0x07, 0x47}, KEY_SPACE},
-		{{IrdaProtocolSamsung32, 0x07, 0x10}, KEY_P | KEY_MOD_LEFT_SHIFT},
-		{{IrdaProtocolSamsung32, 0x07, 0x12}, KEY_N | KEY_MOD_LEFT_SHIFT},
-		{{IrdaProtocolSamsung32, 0x07, 0x0F}, KEY_M},
-	};
-}
-
-
 static void irusb_irda_to_usb(const IrdaMessage *msg, const IrusbState* state) {
-	auto dispatch_action = state->dispatch_table.find(*msg);
-	if (dispatch_action != state->dispatch_table.end()) {
+	auto dispatch_action = state->dispatch_table->find(*msg);
+	if (dispatch_action != state->dispatch_table->end()) {
 		irusb_keystroke(dispatch_action->second);
 	}
 	else if (msg->protocol == IrdaProtocolSamsung32 && msg->address == 0x07) {
@@ -176,7 +153,7 @@ IrusbState* irusb_init(ValueMutex* state_mutex) {
     storage_dir_close(assets_dir);
 	state->app_list_pos = state->remote_list_pos = 0;
 
-	irusb_init_dispatch((IrusbState*)state);
+	state->dispatch_table = irusb_dispatch_init();
 
 	state->event_queue = osMessageQueueNew(8, sizeof(IrusbEvent), NULL);
 	furi_check(state->event_queue);
@@ -197,6 +174,7 @@ void irusb_free(IrusbState* state) {
 	view_port_free(state->view_port);
 	furi_record_close("gui");
 	furi_record_close("storage");
+	irusb_dispatch_free(state->dispatch_table);
 	osMessageQueueDelete(state->event_queue);
 	irda_worker_rx_stop(state->worker);
 	irda_worker_free(state->worker);
