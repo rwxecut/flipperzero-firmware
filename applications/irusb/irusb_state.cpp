@@ -1,5 +1,4 @@
-#include <vector>
-#include <string>
+#include <m-string.h>
 #include <furi.h>
 #include <furi-hal.h>
 #include <gui/gui.h>
@@ -56,8 +55,12 @@ static void irusb_render_callback(Canvas* canvas, void* ctx) {
 	IrusbState *state = (IrusbState*)acquire_mutex((ValueMutex*)ctx, 25);
 	if (!state) return;
 
-	const char *app_text = state->app_list.size() > 0 ? state->app_list[state->app_list_pos].c_str() : "Empty";
-	const char *remote_text = state->remote_list.size() > 0 ? state->remote_list[state->remote_list_pos].c_str() : "Empty";
+	const char *app_text = !string_array_empty_p(state->app_list)
+		? string_get_cstr(*string_array_get(state->app_list, state->app_list_pos))
+		: "Empty";
+	const char *remote_text = !string_array_empty_p(state->remote_list)
+		? string_get_cstr(*string_array_get(state->remote_list, state->remote_list_pos))
+		: "Empty";
 	canvas_draw_icon(canvas, 0, 0, &I_irusb);
 	canvas_set_font(canvas, FontSecondary);
 	//canvas_draw_str(canvas, 0, 37, "U/D App, L/R Remote");
@@ -112,6 +115,8 @@ IrusbState* irusb_init(ValueMutex* state_mutex) {
 	irda_worker_rx_set_received_signal_callback(state->worker, irusb_signal_received_callback, state);
 	irda_worker_rx_enable_blink_on_receiving(state->worker, true);
 
+	string_array_init(state->remote_list);
+	string_array_init(state->app_list);
 	state->storage = (Storage*)furi_record_open("storage");
     const uint8_t filename_size = 100;
     char* filename = (char*)furi_alloc(filename_size);
@@ -123,7 +128,8 @@ IrusbState* irusb_init(ValueMutex* state_mutex) {
     do {
         result = storage_dir_read(assets_dir, &fileinfo, filename, filename_size);
         if(result) {
-			state->remote_list.push_back(filename);
+        	string_t* remote_name = string_array_push_new(state->remote_list);
+        	string_set_str(*remote_name, filename);
         }
     } while(result);
     storage_dir_close(assets_dir);
@@ -131,12 +137,15 @@ IrusbState* irusb_init(ValueMutex* state_mutex) {
     do {
         result = storage_dir_read(assets_dir, &fileinfo, filename, filename_size);
         if(result) {
-			state->app_list.push_back(filename);
+        	string_t* app_name = string_array_push_new(state->app_list);
+        	string_set_str(*app_name, filename);
         }
     } while(result);
     storage_dir_close(assets_dir);
-	state->app_list_pos = state->remote_list_pos = 0;
+	storage_file_free(assets_dir);
+	free(filename);
 
+	state->app_list_pos = state->remote_list_pos = 0;
 	state->dispatch_table = irusb_dispatch_init();
 
 	state->event_queue = osMessageQueueNew(8, sizeof(IrusbEvent), NULL);
@@ -158,6 +167,8 @@ void irusb_free(IrusbState* state) {
 	view_port_free(state->view_port);
 	furi_record_close("gui");
 	furi_record_close("storage");
+	string_array_clear(state->remote_list);
+	string_array_clear(state->app_list);
 	irusb_dispatch_free(state->dispatch_table);
 	osMessageQueueDelete(state->event_queue);
 	irda_worker_rx_stop(state->worker);
@@ -176,21 +187,21 @@ void irusb_loop(IrusbState* state, ValueMutex* state_mutex) {
 				case InputKeyLeft:
 					_state->remote_list_pos--;
 					if (_state->remote_list_pos == UINT8_MAX)
-						state->remote_list_pos = state->remote_list.size() - 1;
+						state->remote_list_pos = string_array_size(state->remote_list) - 1;
 					break;
 				case InputKeyRight:
 					_state->remote_list_pos++;
-					if (_state->remote_list_pos == state->remote_list.size())
+					if (_state->remote_list_pos == string_array_size(state->remote_list))
 						state->remote_list_pos = 0;
 					break;
 				case InputKeyUp:
 					_state->app_list_pos--;
 					if (_state->app_list_pos == UINT8_MAX)
-						state->app_list_pos = state->app_list.size() - 1;
+						state->app_list_pos = string_array_size(state->app_list) - 1;
 					break;
 				case InputKeyDown:
 					_state->app_list_pos++;
-					if (_state->app_list_pos == state->app_list.size())
+					if (_state->app_list_pos == string_array_size(state->app_list))
 						state->app_list_pos = 0;
 					break;
 				case InputKeyOk:

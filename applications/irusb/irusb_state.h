@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
-#include <string>
+#include <m-string.h>
+#include <m-array.h>
 #include <furi.h>
 #include <gui/gui.h>
 #include <irda.h>
@@ -9,6 +9,7 @@
 #include <storage/storage.h>
 #include "irusb_dispatch.h"
 
+ARRAY_DEF(string_array, string_t, STRING_OPLIST)
 
 typedef struct {
     osMessageQueueId_t event_queue;
@@ -19,7 +20,7 @@ typedef struct {
 
     Storage* storage;
     char irda_text[64];
-    std::vector<std::string> app_list, remote_list;
+    string_array_t app_list, remote_list;
     uint8_t app_list_pos, remote_list_pos;
 } IrusbState;
 
