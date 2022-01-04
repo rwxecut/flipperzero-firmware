@@ -24,18 +24,33 @@ typedef struct {
 static void irusb_do_action(IrusbAction action) {
 	switch(action.type) {
 		case IrusbActionKb:
+			FURI_LOG_I(TAG, "Sending HID report: keyboard: %#X", action.kb_keycode);
 			furi_hal_hid_kb_press(action.kb_keycode);
 			furi_hal_hid_kb_release(action.kb_keycode);
 			break;
 		case IrusbActionMouseMove:
+			FURI_LOG_I(TAG, "Sending HID report: mouse move: dx: %d; dy: %d",
+				action.mouse_move.dx, action.mouse_move.dy);
 			furi_hal_hid_mouse_move(action.mouse_move.dx, action.mouse_move.dy);
 			break;
-		case IrusbActionMouseClick:
-			furi_hal_hid_mouse_press(action.mouse_click_button);
-			furi_hal_hid_mouse_release(action.mouse_click_button);
+		case IrusbActionMouseClick: ;
+			char const* button_text = action.mouse_click_button ==
+				HID_MOUSE_BTN_LEFT ? "Left" :
+				HID_MOUSE_BTN_RIGHT ? "Right" :
+				NULL;
+			if (button_text != NULL) {
+				FURI_LOG_I(TAG, "Sending HID report: mouse click: %s", button_text);
+				furi_hal_hid_mouse_press(action.mouse_click_button);
+				furi_hal_hid_mouse_release(action.mouse_click_button);
+			}
+			else goto bogus_action;
 			break;
 		case IrusbActionNone:
+			FURI_LOG_W(TAG, "Unable to dispatch a HID report: action not defined in config");
+			break;
 		default:
+		bogus_action: ;
+			FURI_LOG_E(TAG, "Unable to dispatch a HID report: bogus action (probably a bug)");
 			break;
 	}
 }
@@ -77,6 +92,7 @@ static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 	furi_assert(ctx);
 	furi_assert(sig);
 	IrusbState *state = (IrusbState*)ctx;
+	IrusbAction action = { .type = IrusbActionNone };
 	if (irda_worker_signal_is_decoded(sig)) {
 		const IrdaMessage* message = irda_worker_get_decoded_signal(sig);
 		snprintf(
@@ -88,9 +104,8 @@ static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 				message->address,
 				ROUND_UP_TO(irda_get_protocol_command_length(message->protocol), 4),
 				message->command,
-				message->repeat ? " R\r\n" : "\r\n");
-		IrusbAction action = irusb_dispatch(state->dispatch_table, message);
-		irusb_do_action(action);
+				message->repeat ? " R" : "");
+		action = irusb_dispatch(state->dispatch_table, message);
 	} else {
 		const uint32_t* timings;
 		size_t timings_cnt;
@@ -98,11 +113,12 @@ static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 		snprintf(
 				state->irda_text,
 				sizeof(state->irda_text),
-				"RAW %d samples\r\n",
+				"RAW %d samples",
 				timings_cnt);
 	}
 	view_port_update(state->view_port);
-	printf("Received IRDA signal %s\n", state->irda_text);
+	FURI_LOG_I(TAG, "Received IRDA signal %s", state->irda_text);
+	irusb_do_action(action);
 }
 
 
