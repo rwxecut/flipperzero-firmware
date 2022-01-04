@@ -33,7 +33,8 @@ namespace std {
         bool operator()(const IrdaMessage& m1, const IrdaMessage& m2) const {
             return (m1.protocol < m2.protocol)
                 || (m1.protocol == m2.protocol && m1.address < m2.address)
-                || (m1.address == m2.address && m1.command < m2.command);
+                || (m1.address == m2.address && m1.command < m2.command)
+                || (m1.command == m2.command && (!m1.repeat && m2.repeat));
         }
     };
 }

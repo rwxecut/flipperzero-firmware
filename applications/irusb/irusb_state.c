@@ -28,7 +28,6 @@ static void irusb_do_action(IrusbAction action) {
 			furi_hal_hid_kb_release(action.kb_keycode);
 			break;
 		case IrusbActionMouseMove:
-			// TODO: handle repeat and long/short mouse movements in dispatch
 			furi_hal_hid_mouse_move(action.mouse_move.dx, action.mouse_move.dy);
 			break;
 		case IrusbActionMouseClick:
