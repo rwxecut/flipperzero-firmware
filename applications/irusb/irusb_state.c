@@ -21,36 +21,40 @@ typedef struct {
     EventType type;
 } IrusbEvent;
 
-static void irusb_do_action(IrusbAction action) {
-	switch(action.type) {
-		case IrusbActionKb:
-			FURI_LOG_I(TAG, "Sending HID report: keyboard: %#X", action.kb_keycode);
-			furi_hal_hid_kb_press(action.kb_keycode);
-			furi_hal_hid_kb_release(action.kb_keycode);
+static void irusb_send_report(IrusbHidReport report) {
+	char const* button_text = NULL;
+
+	switch(report.type) {
+		case IrusbHidReportKb:
+			FURI_LOG_I(TAG, "Sending HID report: keyboard: %#X", report.kb_keycode);
+			furi_hal_hid_kb_press(report.kb_keycode);
+			furi_hal_hid_kb_release(report.kb_keycode);
 			break;
-		case IrusbActionMouseMove:
+		case IrusbHidReportMouseMove:
 			FURI_LOG_I(TAG, "Sending HID report: mouse move: dx: %d; dy: %d",
-				action.mouse_move.dx, action.mouse_move.dy);
-			furi_hal_hid_mouse_move(action.mouse_move.dx, action.mouse_move.dy);
+				report.mouse_move.dx, report.mouse_move.dy);
+			furi_hal_hid_mouse_move(report.mouse_move.dx, report.mouse_move.dy);
 			break;
-		case IrusbActionMouseClick: ;
-			char const* button_text = action.mouse_click_button ==
+		case IrusbHidReportMouseClick:
+			button_text = report.mouse_click_button ==
 				HID_MOUSE_BTN_LEFT ? "Left" :
 				HID_MOUSE_BTN_RIGHT ? "Right" :
 				NULL;
 			if (button_text != NULL) {
 				FURI_LOG_I(TAG, "Sending HID report: mouse click: %s", button_text);
-				furi_hal_hid_mouse_press(action.mouse_click_button);
-				furi_hal_hid_mouse_release(action.mouse_click_button);
+				furi_hal_hid_mouse_press(report.mouse_click_button);
+				furi_hal_hid_mouse_release(report.mouse_click_button);
+				break;
 			}
-			else goto bogus_action;
-			break;
-		case IrusbActionNone:
-			FURI_LOG_W(TAG, "Unable to dispatch a HID report: action not defined in config");
+			goto bogus_report;
+		case IrusbHidReportNone:
+			FURI_LOG_W(TAG, "Unable to dispatch the event: "
+				"no HID report defined in config");
 			break;
 		default:
-		bogus_action: ;
-			FURI_LOG_E(TAG, "Unable to dispatch a HID report: bogus action (probably a bug)");
+		bogus_report:
+			FURI_LOG_E(TAG, "Error dispatching the event: got bogus HID report "
+				" (probably a bug)");
 			break;
 	}
 }
@@ -92,7 +96,7 @@ static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 	furi_assert(ctx);
 	furi_assert(sig);
 	IrusbState *state = (IrusbState*)ctx;
-	IrusbAction action = { .type = IrusbActionNone };
+	IrusbHidReport hid_report = { .type = IrusbHidReportNone };
 	if (irda_worker_signal_is_decoded(sig)) {
 		const IrdaMessage* message = irda_worker_get_decoded_signal(sig);
 		snprintf(
@@ -105,7 +109,7 @@ static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 				ROUND_UP_TO(irda_get_protocol_command_length(message->protocol), 4),
 				message->command,
 				message->repeat ? " R" : "");
-		action = irusb_dispatch(state->dispatch_table, message);
+		hid_report = irusb_dispatch(state->dispatch_table, message);
 	} else {
 		const uint32_t* timings;
 		size_t timings_cnt;
@@ -117,8 +121,8 @@ static void irusb_signal_received_callback(void* ctx, IrdaWorkerSignal* sig)
 				timings_cnt);
 	}
 	view_port_update(state->view_port);
-	FURI_LOG_I(TAG, "Received IRDA signal %s", state->irda_text);
-	irusb_do_action(action);
+	FURI_LOG_I(TAG, "Received an IRDA signal event: %s", state->irda_text);
+	irusb_send_report(hid_report);
 }
 
 

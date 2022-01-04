@@ -7,14 +7,14 @@
 #include "irda.h"
 
 typedef enum {
-    IrusbActionNone = 0,
-    IrusbActionKb,
-    IrusbActionMouseMove,
-    IrusbActionMouseClick,
-} IrusbActionType;
+    IrusbHidReportNone = 0,
+    IrusbHidReportKb,
+    IrusbHidReportMouseMove,
+    IrusbHidReportMouseClick,
+} IrusbHidReportType;
 
 typedef struct {
-    IrusbActionType type;
+    IrusbHidReportType type;
     union {
         uint16_t kb_keycode;
         uint8_t mouse_click_button;
@@ -23,7 +23,7 @@ typedef struct {
             int8_t dy;
         } mouse_move;
     };
-} IrusbAction;
+} IrusbHidReport;
 
 #ifdef __cplusplus
 
@@ -39,7 +39,7 @@ namespace std {
     };
 }
 
-typedef std::map<IrdaMessage, IrusbAction> IrusbDispatchTable;
+typedef std::map<IrdaMessage, IrusbHidReport> IrusbDispatchTable;
 #else
 typedef struct IrusbDispatchTable IrusbDispatchTable;
 #endif
@@ -49,7 +49,7 @@ extern "C" {
 #endif
 
 IrusbDispatchTable* irusb_dispatch_init(void);
-IrusbAction irusb_dispatch(const IrusbDispatchTable* dispatch_table,
+IrusbHidReport irusb_dispatch(const IrusbDispatchTable* dispatch_table,
     const IrdaMessage* msg);
 void irusb_dispatch_free(IrusbDispatchTable* dispatch_table);
 
