@@ -117,6 +117,9 @@ IrusbDispatchTable* irusb_dispatch_init(void) {
 
 IrusbAction irusb_dispatch(const IrusbDispatchTable* dispatch_table,
     const IrdaMessage* msg) {
+    furi_assert(dispatch_table);
+    furi_assert(msg);
+
     auto dispatch_action = dispatch_table->find(*msg);
     if (dispatch_action != dispatch_table->end()) {
         return dispatch_action->second;
@@ -126,5 +129,6 @@ IrusbAction irusb_dispatch(const IrusbDispatchTable* dispatch_table,
 }
 
 void irusb_dispatch_free(IrusbDispatchTable* dispatch_table) {
+    furi_assert(dispatch_table);
     delete dispatch_table;
 }
