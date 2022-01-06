@@ -1,4 +1,4 @@
-#include <furi-hal.h>
+#include <furi_hal.h>
 #include <irda.h>
 #include "irusb_config.h"
 #include "irusb_dispatch.h"
