@@ -28,15 +28,14 @@ typedef struct {
 #ifdef __cplusplus
 
 namespace std {
-    template<>
-    struct less<IrdaMessage> {
-        bool operator()(const IrdaMessage& m1, const IrdaMessage& m2) const {
-            return (m1.protocol < m2.protocol)
-                || (m1.protocol == m2.protocol && m1.address < m2.address)
-                || (m1.address == m2.address && m1.command < m2.command)
-                || (m1.command == m2.command && (!m1.repeat && m2.repeat));
-        }
-    };
+template <> struct less<IrdaMessage> {
+    bool operator()(const IrdaMessage& m1, const IrdaMessage& m2) const {
+        return (m1.protocol < m2.protocol) ||
+               (m1.protocol == m2.protocol && m1.address < m2.address) ||
+               (m1.address == m2.address && m1.command < m2.command) ||
+               (m1.command == m2.command && (!m1.repeat && m2.repeat));
+    }
+};
 }
 
 typedef std::map<IrdaMessage, IrusbHidReport> IrusbDispatchTable;
@@ -49,8 +48,7 @@ extern "C" {
 #endif
 
 IrusbDispatchTable* irusb_dispatch_init(void);
-IrusbHidReport irusb_dispatch(const IrusbDispatchTable* dispatch_table,
-    const IrdaMessage* msg);
+IrusbHidReport irusb_dispatch(const IrusbDispatchTable* dispatch_table, const IrdaMessage* msg);
 void irusb_dispatch_free(IrusbDispatchTable* dispatch_table);
 
 #ifdef __cplusplus

@@ -24,7 +24,6 @@ typedef struct {
     uint8_t app_list_pos, remote_list_pos;
 } IrusbState;
 
-
 IrusbState* irusb_init(ValueMutex* state_mutex);
 void irusb_loop(IrusbState* state, ValueMutex* state_mutex);
 void irusb_free(IrusbState* state);
